@@ -8,7 +8,7 @@ const char HTML_HOME[] PROGMEM = R"=====(
 <!DOCTYPE html>
 <html>
 <head>
-<title>Energy2Shelly ESP</title>
+<title>Energy2EcoTracker ESP</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f4f4f4; color: #333; }
@@ -39,7 +39,7 @@ const char HTML_HOME[] PROGMEM = R"=====(
 </style>
 </head>
 <body>
-  <h1>Energy2Shelly ESP</h1>
+  <h1>Energy2EcoTracker ESP</h1>
   <p>This device emulates a Shelly Pro 3EM to integrate various energy meters.</p>
   <div class="nav">
     <a href="/status">View Status</a>
@@ -178,7 +178,7 @@ const char* htmlPage_console PROGMEM  = R"rawliteral(
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Energy2Shelly_ESP HTTP Console</title>
+    <title>Energy2EcoTracker ESP HTTP Console</title>
     <style>
         body { background-color: #1e1e1e; color: #00ff00; font-family: monospace; padding: 20px; margin: 0; }
         h2 { color: #ffffff; font-family: sans-serif; margin-bottom: 10px; }
@@ -194,7 +194,7 @@ const char* htmlPage_console PROGMEM  = R"rawliteral(
     </style>
 </head>
 <body>
-    <h2>Energy2Shelly_ESP Live Web Console</h2>
+    <h2>Energy2EcoTracker ESP Live Web Console</h2>
     <div id="console"><span class="status">[Connecting to console stream...]</span><br></div>
     <div class="controls-container">
         <div class="btn-container">
@@ -310,7 +310,7 @@ const char webplotter_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Energy2Shelly_ESP EM Live Power Dashboard</title>
+    <title>Energy2EcoTracker ESP EM Live Power Dashboard</title>
     <!-- Chart.js via CDN -->
     <script src="/chart.min.js"></script>
     <style>
@@ -395,7 +395,7 @@ const char webplotter_html[] PROGMEM = R"rawliteral(<!DOCTYPE html>
 
     <div id="power-data"></div>
     <footer class="footer">
-        <p>Energy2Shelly_ESP EM Live Power Dashboard</p>
+        <p>Energy2EcoTracker ESP EM Live Power Dashboard</p>
         <p>This software uses <a href="https://chartjs.org" target="_blank" rel="noopener">Chart.js</a> (Released under the MIT License, Copyright © 2025 Chart.js Contributors).</p>
     </footer>
 </div>
@@ -559,7 +559,7 @@ const char CONFIG_PAGE_HTML[] PROGMEM = R"=====(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Energy2Shelly Config Editor</title>
+    <title>Energy2EcoTracker Config Editor</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
@@ -573,7 +573,7 @@ const char CONFIG_PAGE_HTML[] PROGMEM = R"=====(
 </head>
 <body>
     <div class="card">
-        <h2>Energy2Shelly Config Editor</h2>
+        <h2>Energy2EcoTracker Config Editor</h2>
         <button onclick="goBack()" style="margin-bottom: 15px;">
         ← Back
         </button>

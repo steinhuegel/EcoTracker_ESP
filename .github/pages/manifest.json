@@ -1,5 +1,5 @@
 {
-    "name": "Energy2Shelly",
+    "name": "Energy2EcoTracker",
     "new_install_prompt_erase": true,
     "builds": [
       {

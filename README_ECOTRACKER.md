@@ -1,4 +1,4 @@
-# Energy2Shelly_ESP mit EcoTracker-Ausgang und ioBroker-Eingang
+# Energy2EcoTracker: EcoTracker-Ausgang und ioBroker-Eingang für ESP8266/ESP32
 
 Erweiterung von [Energy2Shelly_ESP](https://github.com/TheRealMoeder/Energy2Shelly_ESP) (läuft auf ESP8266 und ESP32).
 Das Protokoll des EcoTrackers ist aus [uni-meter](https://github.com/sdeigm/uni-meter) übernommen
@@ -15,7 +15,7 @@ Das Protokoll des EcoTrackers ist aus [uni-meter](https://github.com/sdeigm/uni-
 ## Einrichtung
 
 1. Firmware flashen (ESP8266: eine einzelne `.bin` ab Adresse 0, es gibt dort keine Partitionstabelle) und wie gewohnt
-   per Hotspot „Energy2Shelly“ ins WLAN bringen.
+   per Hotspot „Energy2EcoTracker“ ins WLAN bringen.
 2. `http://<IP>/config` öffnen:
    * **Basic Settings → Output Type** = `ECOTRACKER`
    * **Basic Settings → Input Type** = `IOBROKER`
@@ -95,5 +95,5 @@ Nach einem frischen Flash bzw. Reset der Einstellungen gilt ohne weitere Eingabe
 | Abfrageintervall | 2000 ms |
 | EcoTracker | Port 80, `serial` 293d45273261, `productid` 1137 |
 
-Nur das WLAN muss beim ersten Start über den Hotspot „Energy2Shelly“ eingetragen werden (Passwörter stehen bewusst nicht im Code).
+Nur das WLAN muss beim ersten Start über den Hotspot „Energy2EcoTracker“ eingetragen werden (Passwörter stehen bewusst nicht im Code).
 Der Port 4711 und der uni-meter-HTTP-Port 8080 aus der Konfiguration werden nicht übernommen, der ESP nutzt Port 80.

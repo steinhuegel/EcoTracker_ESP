@@ -1,4 +1,4 @@
-# EcoTracker_ESP
+# Energy2EcoTracker
 
 Fork von [Energy2Shelly_ESP](https://github.com/TheRealMoeder/Energy2Shelly_ESP) mit zwei Erweiterungen für ESP8266/ESP32:
 
@@ -6,7 +6,7 @@ Fork von [Energy2Shelly_ESP](https://github.com/TheRealMoeder/Energy2Shelly_ESP)
 * **Eingang ioBroker:** Datenpunkte per simple-API-Adapter (`getBulk`).
 
 Anleitung, Einstellungen und Standardwerte: **[README_ECOTRACKER.md](README_ECOTRACKER.md)**.
-Lizenz: Apache-2.0 (wie das Original). Der folgende Teil ist die unveränderte README von Energy2Shelly_ESP.
+Lizenz: Apache-2.0 (wie das Original). Der folgende Teil ist die README von Energy2Shelly_ESP (nur der Name des WLAN-Hotspots ist angepasst: „Energy2EcoTracker“).
 
 ---
 
@@ -51,7 +51,7 @@ To re-enter WiFiManager for updates or parameter changes:
 
 
 # Configuration
-#### 1. Power device and wait for a hotspot named "Energy2Shelly"
+#### 1. Power device and wait for a hotspot named "Energy2EcoTracker"
 #### 2. Connect to that hotspot
 #### 3. Enter wifi data using the captive portal or by opening http://192.168.4.1/
 #### 4. Check if your device is visible in the WLAN. <code>http://IP-address</code><br>
@@ -141,7 +141,7 @@ To re-enter WiFiManager for updates or parameter changes:
 #### 6. reboot / power on/off the device or press the reset button
 #### 7. Check the current power data at <code>http://IP-address</code><br>
 - [ ] \(Optional) <code>http://IP-address/status</code><br>
-- [ ] \(Optional) If you want to reset you Wifi-Configuration  go to <code>http://IP-address/reset</code> and reconnect to the Energy2Shelly hotspot.
+- [ ] \(Optional) If you want to reset you Wifi-Configuration  go to <code>http://IP-address/reset</code> and reconnect to the Energy2EcoTracker hotspot.
 
 #### 8. Check debug output at <code>http://IP-address/console</code><br>
 - you can enable/disable autoscroll, save text data and clear console

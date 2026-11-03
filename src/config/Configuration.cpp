@@ -390,7 +390,7 @@ void WifiManagerSetup(bool stationmode)
   wifiManager.setDebugOutput(false);
   wifiManager.setShowStaticFields(true);
 
-  wifiManager.setTitle(String("Energy2Shelly for ESP ") + VERSION_BUILD);
+  wifiManager.setTitle(String("Energy2EcoTracker for ESP ") + VERSION_BUILD);
   wifiManager.setSaveConfigCallback(saveConfigCallback);
   wifiManager.setConfigPortalTimeout(180);
   std::vector<const char *> usermenu = {"wifi","info","exit","sep","update"};
@@ -421,7 +421,7 @@ void WifiManagerSetup(bool stationmode)
   }
   else
   {
-    if (!wifiManager.autoConnect("Energy2Shelly"))
+    if (!wifiManager.autoConnect("Energy2EcoTracker"))
     {
       DEBUG_SERIAL.println(F("failed to connect and hit timeout"));
      
