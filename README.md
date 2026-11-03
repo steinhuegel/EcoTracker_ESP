@@ -1,187 +1,152 @@
 # Energy2EcoTracker
 
-Fork von [Energy2Shelly_ESP](https://github.com/TheRealMoeder/Energy2Shelly_ESP) mit zwei Erweiterungen für ESP8266/ESP32:
+Ein ESP8266/ESP32 gibt sich als **Everhome EcoTracker** aus und liefert Zählerdaten an Speicher und Wechselrichter, die
+einen EcoTracker abfragen (Nulleinspeisung). Die Messwerte holt er aus dem **ioBroker**.
 
-* **Ausgang Everhome EcoTracker:** `GET /v1/json` und mDNS `_everhome._tcp` (Protokoll nach [uni-meter](https://github.com/sdeigm/uni-meter)).
-* **Eingang ioBroker:** Datenpunkte per simple-API-Adapter (`getBulk`).
+Das Projekt ist ein Fork von [Energy2Shelly_ESP](https://github.com/TheRealMoeder/Energy2Shelly_ESP) (dort emuliert der ESP einen
+Shelly Pro 3EM). Das EcoTracker-Protokoll ist nach [uni-meter](https://github.com/sdeigm/uni-meter) umgesetzt.
+Lizenz: Apache-2.0, wie beide Originale.
 
-Anleitung, Einstellungen und Standardwerte: **[README_ECOTRACKER.md](README_ECOTRACKER.md)**.
-Lizenz: Apache-2.0 (wie das Original). Der folgende Teil ist die README von Energy2Shelly_ESP (nur der Name des WLAN-Hotspots ist angepasst: „Energy2EcoTracker“).
+> **Status:** Der Code wird per GitHub Actions für ESP8266, ESP32, ESP32-S3 und ESP32-C3 gebaut. Ein ausgiebiger Test im
+> Dauerbetrieb an einem Speicher steht noch aus.
 
----
+## Was es kann
 
-# Energy2Shelly_ESP
+| | |
+|---|---|
+| **Ausgang `ECOTRACKER`** (Standard) | `GET http://<IP>/v1/json` auf Port 80 und mDNS-Service `_everhome._tcp` |
+| **Ausgang `SHELLY`** (optional) | Shelly-Pro-3EM-Emulation wie im Originalprojekt |
+| **Eingang `IOBROKER`** (Standard) | Datenpunkte per ioBroker-Adapter *simple-api* (`getBulk`) |
+| weitere Eingänge | MQTT, HTTP, SMA, SHRDZM, SUNSPEC, Tibber Pulse, SML seriell, siehe [Original-README](docs/README_Energy2Shelly_ESP_original.md) |
 
-[![CI](https://github.com/TheRealMoeder/Energy2Shelly_ESP/actions/workflows/main.yml/badge.svg)](https://github.com/TheRealMoeder/Energy2Shelly_ESP/actions/workflows/main.yml)
+Unterstützte Chips: ESP8266, ESP32, ESP32-S3, ESP32-C3.
 
-### Getting started
-This is a Shelly Pro 3EM Emulator running on ESP8266 or ESP32 using various input sources for power data.<br>
-This can be used for zero feed-in with Hoymiles MS-A2, Growatt NOAH/NEXA and Marstek Venus (testers needed!).
+## 1. Firmware besorgen
 
-Kudos to @sdeigms excellent work at https://github.com/sdeigm/uni-meter which made this port easily possible.<br>
-SMA Multicast code is based on https://www.mikrocontroller.net/topic/559607
+Jeder Push auf GitHub startet einen Build (Reiter **Actions**). Die fertigen Dateien hängen am Lauf:
 
+1. Auf GitHub **Actions** öffnen, den neuesten Lauf anklicken.
+2. Ganz unten bei **Artifacts** das Paket **firmware** herunterladen und entpacken.
+3. Die passende Datei wählen:
 
-# Installation
-## Option 1: Compile yourself
-Compile and flash for your microcontroller using [PlatformIO](https://platformio.org/)
-## Option 2: Flash pre-compiled binary via browser 
-Connect your ESP to your PC using USB and follow the instructions on the [webflasher](https://therealmoeder.github.io/Energy2Shelly_ESP/)
-  > [!NOTE]
-  > If you have trouble connecting to your ESP32-S3 or C3, hold BOOT and press RESET once before starting webflasher.
+| Chip | Erstes Flashen (per USB) | Update über das Web-Menü |
+|---|---|---|
+| ESP8266 | `esp8266.bin` | `esp8266.bin` |
+| ESP32 | `esp32.bin` | `esp32-ota.bin` |
+| ESP32-S3 (4 MB) | `esp32-s3.bin` | `esp32-s3-ota.bin` |
+| ESP32-S3 (8 MB) | `esp32-s3-N8.bin` | `esp32-s3-N8-ota.bin` |
+| ESP32-C3 | `esp32-c3.bin` | `esp32-c3-ota.bin` |
 
-## Option 3: OTA update if you have previously installed Energy2Shelly
-Directly download a matching OTA-binary for your ESP device from the releases page and install the over-the-air update using WifiManager on your Energy2Shelly.<br>
+Alternativ selbst bauen mit [PlatformIO](https://platformio.org/): `pio run -e esp8266` (bzw. `esp32`, `esp32-s3`, `esp32-c3`).
 
-### Reconfiguration & Software Updates
-After a successful initial setup, **WiFiManager no longer runs in Access Point (AP) mode**. You do not need to connect to a temporary Wi-Fi network anymore. Instead, the device is now available **locally within your home network**.
+## 2. Flashen (erstes Mal)
 
-To re-enter WiFiManager for updates or parameter changes:
+ESP per USB anschließen und mit [esptool](https://github.com/espressif/esptool) auf Adresse `0x0` schreiben
+(alle Dateien aus der Spalte „Erstes Flashen" sind komplett und werden an `0x0` geschrieben):
 
-1. Make sure your computer or smartphone is connected to the **same home network** as the device.
-2. Navigate to `http://<your-device-ip>/update` to reboot the device into configuration mode. Webpage will reload in about 20s
-3. Once the system has restarted, you can:
-   * Use `http://<your-device-ip>/update` to perform an **OTA software update**. After OTA update, webpage will reload in about 20s
-   * Use the interface to **adjust parameters** and reconfigure your settings.
+```
+python -m esptool --port <COMx oder /dev/ttyUSBx> write_flash 0x0 esp8266.bin
+```
 
-> 💡 **Tip:** If the page does not appear or shows an error after the reboot, **refresh/reload your browser**  to force a clean reconnect.
+Bei Verbindungsproblemen den ESP in den Flash-Modus versetzen (GPIO0 beim Reset auf Masse; bei ESP32-S3/C3 BOOT gedrückt
+halten und einmal RESET drücken). Beim ESP8266 sollte vorher der Flash gelöscht werden: `python -m esptool erase_flash`.
 
+## 3. Einrichten
 
+1. ESP einschalten und auf den WLAN-Hotspot **Energy2EcoTracker** warten, verbinden.
+2. Im Portal (oder unter `http://192.168.4.1/`) das eigene WLAN eintragen.
+3. Die IP-Adresse des ESP im Router nachsehen und `http://<IP>/config` öffnen.
+   (Ist ein Reset-Passwort gesetzt, fragt der ESP danach: Benutzername leer lassen.)
+4. Einstellungen prüfen bzw. anpassen, **speichern** und den ESP neu starten (Strom aus/an oder Reset-Taste).
+   Der mDNS-Name wird nur beim Start gesetzt.
+5. Prüfen: `http://<IP>/v1/json` liefert die Messwerte. Meldungen stehen unter `http://<IP>/console`.
 
+Die Standardwerte (siehe unten) gelten nach einem frischen Flash bzw. Zurücksetzen. Danach gespeicherte Änderungen bleiben im
+Flash erhalten.
 
+### Späteres Reconfigurieren und Updates
 
-# Configuration
-#### 1. Power device and wait for a hotspot named "Energy2EcoTracker"
-#### 2. Connect to that hotspot
-#### 3. Enter wifi data using the captive portal or by opening http://192.168.4.1/
-#### 4. Check if your device is visible in the WLAN. <code>http://IP-address</code><br>
-#### 5. go to configuration page and enter the detailed configuration.
-     The device will ask for user and password. Default: empty. In configuration you can set a password. User name is not used; let it empty.
+Nach der Einrichtung öffnet der ESP keinen Hotspot mehr, er ist nur im Heimnetz erreichbar.
 
-  #### The following options are available:
-  - <code>MQTT</code>
-    - Server IP, port, username, password and topic
-    - Power values on the MQTT topic are expected in JSON format. The are multiple fields to define available values using a JSON Path-style syntax.
-      You can also select between monophase and triphase power data.<br>
-      
-      example (monophase profile):
-        - Total power JSON path -> <code>ENERGY.Power</code> for <code>{"ENERGY":{"Power":9.99}}</code><br>
-        - Phase 1 power JSON path -> "no definition" <br>
-        - Phase 2 power JSON path -> "no definition" <br>
-        - Phase 3 power JSON path -> "no definition" <br>
-        - Energy from grid JSON path -> <code>ENERGY.Consumption</code> for <code>{"ENERGY":{"Consumption":77}}</code><br>
-        - Energy to grid JSON path ->  <code>ENERGY.Production</code> for  <code>{"ENERGY":{"Production":33}}</code><br>
-              -> Energy2Shelly_ESP responds to <br><code>{"ENERGY":{"Power": 9.99,"Consumption":77,"Production":33}}</code><br>
+1. `http://<IP>/update` öffnen: der ESP startet in den Konfigurationsmodus neu (ca. 20 s).
+2. Dort die Datei aus der Spalte „Update über das Web-Menü" hochladen oder die Parameter ändern.
 
-      example (triphase profile):
-        - Total power JSON path -> <code>ENERGY.Power</code> for <code>{"ENERGY":{"Power":7.3}}</code><br>
-        - Phase 1 power JSON path -> <code>ENERGY.Pow1</code> for <code>{"ENERGY":{"Pow1":98}}</code><br>
-        - Phase 2 power JSON path -> <code>ENERGY.Pow2</code> for <code>{"ENERGY":{"Pow2":196}}</code><br>
-        - Phase 3 power JSON path -> <code>ENERGY.Pow3</code> for <code>{"ENERGY":{"Pow3":294}}</code><br>
-        - Energy from grid JSON path -> <code>ENERGY.Consumption</code> for <code>{"ENERGY":{"Consumption":98}}</code>
-        - Energy to grid JSON path ->  <code>ENERGY.Production</code> for  <code>{"ENERGY":{"Production":131}}</code><br>
-              -> Energy2Shelly_ESP responds to <br><code>{"ENERGY":{"Power":7.3,"Pow1":98,"Pow2":196,"Pow3":294,"Consumption":98,"Production":131}}</code><br>
-        
-  - <code>SMA</code>
-    - SMA Energy Meter or Home Manager UDP multicast data
-    - if you have multiple SMA energy meters you can optionally provide the serial number of the source you want to use in the configuration options
-  - <code>SHRDZM</code>
-    - SHRDZM smart meter interface (common in Austria) with UDP unicast data
-    - please enable UDP broadcasts to the IP of the ESP and port 9522 within SHRDZM
-  - <code>HTTP</code>
-    - a generic HTTP input
-    - enter a query URL in the second parameter field which delivers JSON data and define at least the JSON Path for total power.
-    - for full details on JSONPath configuration, check the section on MQTT above.<br>
-  - <code>SUNSPEC</code>
-    - generic SUNSPEC register data polling via Modbus TCP
-    - you can setup host ip of Modbus device (e.g. Kostal Smart energy meter)
-    - Modbus TCP port (usually 502)
-    - Modbus Device ID of the unit ID (71 for KSEM)
-  - <code>TIBBERPULSE</code>
-    - Parses SML data from your Tibber Pulse IR locally using the [sml_parser](https://github.com/olliiiver/sml_parser) ESP library. This is a great option if you want to use Tibber Pulse data for zero feed-in with Hoymiles MS-A2, Growatt NOAH/NEXA, TSUN DCU2000lite or Marstek Venus inverters/batteries.
-    - Follow [these](https://github.com/marq24/ha-tibber-pulse-local#tibber-pulse-ir-local) instructions to access your Tibber Pulse/Bridge data locally.
-    - Provide the `IP address / hostname` and `port` of the WebSocket API, the `node id` of your Pulse IR in the Bridge configuration, plus `username` and `password` of your Tibber Bridge, in the configuration options so Energy2Shelly_ESP can connect and receive power data.
-    - The parser automatically extracts `total power`, `phase power` and `energy from/to the grid` from the WebSocket API data stream and makes it available for the Shelly Pro 3EM Emulator.
-    - The following power meters are confirmed to work:
-      - **EMH EHZB**
-      - **eBZ DD3**
-      - **Iskra MT631**
-      - **EMH EHZ**
-      - **EasyMeter ESY11**
-    - Most power meters with SML output should work out of the box. If you encounter an error, please open an issue with your meter's model and a sample data log.
-  - <code>SMLSERIAL</code>
-    - Reads SML data directly from an IR reading head (e.g. Hichi IR TTL, bitShake SmartMeterReader-UART) wired to a UART pin of the ESP, no WiFi bridge needed.
-    - Wiring: reading head `VCC` -> `3V3`, `GND` -> `GND`, reading head `TX` -> configured `RX GPIO` of the ESP. The TX line of the ESP is not used.
-    - Configuration: `RX GPIO` (default 20 on ESP32-C3, 16 on ESP32, 18 on ESP32-S3, 13/D7 on ESP8266), `Baud rate` (usually 9600) and `Invert RX signal` (usually false).
-    - GPIO20 on the ESP32-C3 is only free on boards with native USB and no USB-UART chip (e.g. ESP32-C3 SuperMini). On boards like the ESP32-C3-DevKitM-1 GPIO20 is driven by the USB-UART chip, use another pin such as 4 or 10 there. Flash and USB pins are rejected.
-    - Energy counters are only published if the meter sends them. Telegrams without a power value publish 0 W and are reported in the console (enter the meter PIN / enable extended data).
-    - Same OBIS values as <code>TIBBERPULSE</code>: `1.8.0`, `2.8.0`, `16.7.0` and, if available, `36.7.0`/`56.7.0`/`76.7.0` for the phases. Many meters only send the current power after the PIN has been entered at the meter.
-    - The console shows a hex dump of the first received bytes and statistics every 30s, which helps to find wrong baud rate or invert settings.
-    - On ESP32 a hardware UART (`Serial1`) is used, on ESP8266 SoftwareSerial. A reboot is required after changing the settings.
+Tipp: Zeigt der Browser danach einen Fehler, die Seite neu laden. Das WLAN zurücksetzen geht über `http://<IP>/reset`.
 
-  #### Here are some sample generic HTTP query paths for common devices:
-  - Fronius: <code>http://IP-address/solar_api/v1/GetMeterRealtimeData.cgi?Scope=System</code>
-  - Tasmota devices: <code>http://IP-address/cm?cmnd=status%2010</code>
-  - ioBroker datapoints: <code>http://IP-address:8082/getBulk/smartmeter.0.1-0:1_8_0__255.value,smartmeter.0.1-0:2_8_0__255.value,smartmeter.0.1-0:16_7_0__255.value/?json</code>
-  
-  The Shelly ID defaults to the ESP's MAC address, you may change this if you want to substitute an existing uni-meter configuration without reconnecting the battery to a new shelly device.
-  
-  #### Power offset option:
-  - This option allows a positive or negative value to be added to the emulated Shelly's output data
-  
-  #### How the <code>phase_number</code> option can be used:
-  - If you have a monophase setup, set <code>phase_number</code> to <code>1</code>. This asigns all power and energy data to phase 1.
-  - If you have a triphase setup, set <code>phase_number</code> to <code>3</code>. This distributes power and energy data across all three phases.
-  
-  > [!NOTE]
-  > This option controls how energy2shelly firmware outputs energy data, it does not change the input data. So if you have a triphase setup but want to assign all data to phase 1, set <code>phase_number</code> to <code>1</code>. The TRIPAHSE option in JSONPATH settings only controls how the firmware reads the input data, not how it outputs this data.
+## Eingang: ioBroker
 
-  #### don't forget to save the new settings. Some of the settings come into effect immediately, some of them need a reboot.
+Im ioBroker den Adapter **simple-api** installieren (Standard-Port 8087). Test im Browser, die IDs anpassen:
 
-#### 6. reboot / power on/off the device or press the reset button
-#### 7. Check the current power data at <code>http://IP-address</code><br>
-- [ ] \(Optional) <code>http://IP-address/status</code><br>
-- [ ] \(Optional) If you want to reset you Wifi-Configuration  go to <code>http://IP-address/reset</code> and reconnect to the Energy2EcoTracker hotspot.
+```
+http://<ioBroker-IP>:8087/getBulk/<ID1>,<ID2>/?json
+```
 
-#### 8. Check debug output at <code>http://IP-address/console</code><br>
-- you can enable/disable autoscroll, save text data and clear console
+Erwartet wird ein Array wie `[{"id":"...","val":123.4,...}, ...]`. Der ESP stellt pro Abfrageintervall genau eine Anfrage.
 
-#### 9. Or monitor the power consumption over time at <code>http://IP-address/plot</code><br>
+| Feld | Bedeutung |
+|---|---|
+| Host / Port | ioBroker-IP und simple-api-Port |
+| Total Power | Gesamtleistung in W, **positiv = Bezug, negativ = Einspeisung** |
+| Power L1 / L2 / L3 | optional. Sind alle drei gesetzt, werden sie statt der Gesamtleistung verwendet |
+| Energy Import / Export | optional: Zähler Bezug / Einspeisung. Es müssen beide gesetzt sein |
+| Energy Factor | 1, wenn die Datenpunkte in Wh vorliegen, **1000**, wenn in kWh |
+| Query Period | Abfrageintervall in ms (mindestens 1000) |
 
-# Currently supported microcontrollers
-* ESP32-C3
-* ESP32-S3 (>=4MByte Flash)
-* ESP32-S3-N8 (>=8MByte Flash)
-* ESP32
-* ESP8266
+Das **Power Offset** und die **Phase Number** aus den Basic Settings gelten auch hier (`3` verteilt auf drei Phasen, `1` legt alles
+auf Phase 1).
 
-# You found a bug
-First, sorry. This software is not perfect.
-1. Open an issue
-- With helpful title - use descriptive keywords in the title and body so others can find your bug (avoiding duplicates).
-- Which branch, what microcontroller, what setup
-- Steps to reproduce the problem, with actual vs. expected results
-- If you find a bug in our code, post the files and the lines.
-2. Open a PR 😻
-- Explain in detail your changes
-- Ask for a review
+## Ausgang: EcoTracker
 
-# some screenshots from project
-  ![wifi](./screenshots/screenshot_01.png)
+`GET /v1/json` liefert:
 
-  ### Settings
-  ![settings](./screenshots/screenshot_02.png)
-  ![settings](./screenshots/screenshot_03.png)
+```json
+{"power":124,"powerAvg":-45,"powerPhase1":41.2,"powerPhase2":41.2,"powerPhase3":41.2,
+ "energyCounterIn":13849.623,"energyCounterOut":717.875}
+```
 
-  ### main page <code>http://IP-address</code>
-  ![main](./screenshots/screenshot_04.png)
+* `power` und `powerAvg` in W. `powerAvg` ist ein gleitender Mittelwert (Standard 60 s, einstellbar 1–120 s).
+* Die Energiezähler sind in **kWh**.
+* mDNS: Hostname `ecotracker-<MAC>.local`, Service `_everhome._tcp` auf Port 80, TXT-Einträge `ip`, `serial`, `productid`.
+* Sind die Daten veraltet (ioBroker seit mehr als 30 s bzw. drei Abfrageintervallen nicht erreichbar oder seit dem Start noch nie
+  erfolgreich abgefragt), antwortet `/v1/json` mit **HTTP 503**, damit der Speicher nicht mit alten Werten regelt.
+* Der Port ist fest 80.
+* mDNS prüfen: `avahi-browse -r _everhome._tcp` (Linux) oder `dns-sd -B _everhome._tcp` (macOS).
 
-  ### status page <code>http://IP-address/status</code>
-  ![status](./screenshots/screenshot_05.png)
+Weitere Seiten: `http://<IP>/` (Übersicht), `/plot` (Verlauf), `/console` (Log), `/config`, `/status`.
+Mit **Output Type = SHELLY** verhält sich das Gerät wie im Originalprojekt (Shelly Pro 3EM, `/rpc/...`, mDNS `_shelly._tcp`).
 
-  ### console page <code>http://IP-address/console</code>
-  ![console](./screenshots/screenshot_06.png)
+## Voreingestellte Werte
 
+Hinterlegt in `DEFAULT_CONFIG_JSON` (`src/config/Configuration.cpp`), übernommen aus einer uni-meter-Konfiguration:
 
-  > [!NOTE]
-  > Images may vary depending on the version. We always try to be up to date.
+| Einstellung | Wert |
+|---|---|
+| Output / Input | `ECOTRACKER` / `IOBROKER`, Phase Number 3 |
+| ioBroker | `192.168.178.41:8087` |
+| Leistung L1 / L2 / L3 | `homee.0.EnergyMeter-38.CurrentEnergyUse-282` / `-286` / `-290` |
+| Energie Bezug / Einspeisung | `mqtt.0.Zaehlerstand` / `mqtt.0.PVGesamt` |
+| Energy Factor | 1000 (Datenpunkte in kWh) |
+| Abfrageintervall | 2000 ms |
+| EcoTracker | `serial` 293d45273261, `productid` 1137 |
+
+Zugangsdaten (WLAN) stehen bewusst nicht im Code. Wer das Projekt für ein anderes Netz nutzt, ändert diese Werte in `/config`
+oder im Quellcode.
+
+## Entwicklung und Tests
+
+Die hardwareunabhängige Logik (Mittelwert, EcoTracker-JSON, ioBroker-Parser, URL-Bau) liegt in `src/data/EcoTrackerCore.h` und
+wird auf dem PC getestet:
+
+```
+git clone --depth 1 --branch v7.4.2 https://github.com/bblanchon/ArduinoJson.git
+ARDUINOJSON_DIR=$PWD/ArduinoJson ./test/host/run.sh
+```
+
+Neu gegenüber Energy2Shelly_ESP: `src/data/EcoTrackerCore.h`, `src/output/EcoTracker.{h,cpp}`, `src/parsers/IoBrokerParser.cpp`,
+`test/host/*`. Geändert: `src/config/Configuration.{h,cpp}`, `src/main.cpp`, `src/parsers/Parsers.h`,
+`src/data/DataProcessing.cpp` (Phasen- und Energieaufteilung ohne Rundungsverlust), `src/web/html_home.h`.
+
+## Danksagung
+
+* [TheRealMoeder/Energy2Shelly_ESP](https://github.com/TheRealMoeder/Energy2Shelly_ESP): die Firmware-Grundlage
+* [sdeigm/uni-meter](https://github.com/sdeigm/uni-meter): Vorlage für das EcoTracker-Protokoll und die ioBroker-Anbindung
