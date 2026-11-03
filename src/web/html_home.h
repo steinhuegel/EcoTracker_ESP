@@ -40,7 +40,7 @@ const char HTML_HOME[] PROGMEM = R"=====(
 </head>
 <body>
   <h1>Energy2EcoTracker ESP</h1>
-  <p>This device emulates a Shelly Pro 3EM to integrate various energy meters.</p>
+  <p>This device emulates an Everhome EcoTracker (GET /v1/json) to integrate various energy meters. Optionally it can emulate a Shelly Pro 3EM (Output Type in the configuration).</p>
   <div class="nav">
     <a href="/status">View Status</a>
     <a href="/console">Console</a>
