@@ -125,13 +125,51 @@ jobs:
             ./.github/pages/esp32-c3.bin
             ./.github/pages/esp32-c3-ota.bin
             
+      # GitHub Pages is only needed for tagged releases (webflasher), so these steps are
+      # skipped for normal pushes; otherwise the run fails in repositories without Pages.
       - name: Setup Github Page
+        if: github.ref_type == 'tag'
         uses: actions/configure-pages@v6
         
       - name: Upload webflash files
+        if: github.ref_type == 'tag'
         uses: actions/upload-pages-artifact@v5
         with:
           path: ./.github/pages/
+
+  # Publishes the freshly built binaries on the Releases page ("latest")
+  release-latest:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download firmware artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: firmware
+      - name: Publish latest firmware
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: latest
+          name: Neueste Firmware (automatisch gebaut)
+          body: |
+            Automatisch gebaute Firmware des letzten Stands von `main`.
+            Erstes Flashen per USB: `esp8266.bin`, `esp32.bin`, `esp32-s3.bin`, `esp32-s3-N8.bin` oder `esp32-c3.bin`.
+            Update über das Web-Menü (`/update`): `esp8266.bin` bzw. die Dateien `*-ota.bin`.
+          prerelease: true
+          fail_on_unmatched_files: true
+          files: |
+            ./esp8266.bin
+            ./esp32.bin
+            ./esp32-ota.bin
+            ./esp32-s3.bin
+            ./esp32-s3-ota.bin
+            ./esp32-s3-N8.bin
+            ./esp32-s3-N8-ota.bin
+            ./esp32-c3.bin
+            ./esp32-c3-ota.bin
           
   deploy:
     needs: build

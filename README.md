@@ -23,11 +23,9 @@ Unterstützte Chips: ESP8266, ESP32, ESP32-S3, ESP32-C3.
 
 ## 1. Firmware besorgen
 
-Jeder Push auf GitHub startet einen Build (Reiter **Actions**). Die fertigen Dateien hängen am Lauf:
+Jeder Push auf `main` startet einen Build. Die fertigen Dateien stehen danach auf der Seite **Releases** (rechts auf der
+Startseite des Repos, Eintrag „Neueste Firmware“) unter **Assets**. Dort die passende Datei anklicken, sie wird heruntergeladen:
 
-1. Auf GitHub **Actions** öffnen, den neuesten Lauf anklicken.
-2. Ganz unten bei **Artifacts** das Paket **firmware** herunterladen und entpacken.
-3. Die passende Datei wählen:
 
 | Chip | Erstes Flashen (per USB) | Update über das Web-Menü |
 |---|---|---|
@@ -36,6 +34,9 @@ Jeder Push auf GitHub startet einen Build (Reiter **Actions**). Die fertigen Dat
 | ESP32-S3 (4 MB) | `esp32-s3.bin` | `esp32-s3-ota.bin` |
 | ESP32-S3 (8 MB) | `esp32-s3-N8.bin` | `esp32-s3-N8-ota.bin` |
 | ESP32-C3 | `esp32-c3.bin` | `esp32-c3-ota.bin` |
+
+Der Build dauert etwa 6 Minuten. Solange der Lauf unter **Actions** noch läuft, ist die Datei noch nicht aktuell.
+Alternativ hängt die Firmware auch als Paket **firmware** unten auf der Übersichtsseite (Summary) des jeweiligen Laufs.
 
 Alternativ selbst bauen mit [PlatformIO](https://platformio.org/): `pio run -e esp8266` (bzw. `esp32`, `esp32-s3`, `esp32-c3`).
 
