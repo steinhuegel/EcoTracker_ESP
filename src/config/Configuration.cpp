@@ -276,7 +276,7 @@ const char DEFAULT_CONFIG_JSON[] PROGMEM = R"=====(
     "output_type": "ECOTRACKER"
   },
   "ecotracker": {
-    "serial": "293d45273261",
+    "serial": "293d45273262",
     "productid": "1137",
     "avg_interval": 60,
     "suppress_phases": "false",

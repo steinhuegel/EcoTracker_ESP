@@ -128,7 +128,7 @@ Hinterlegt in `DEFAULT_CONFIG_JSON` (`src/config/Configuration.cpp`), übernomme
 | Energie Bezug / Einspeisung | `mqtt.0.Zaehlerstand` / `mqtt.0.PVGesamt` |
 | Energy Factor | 1000 (Datenpunkte in kWh) |
 | Abfrageintervall | 2000 ms |
-| EcoTracker | `serial` 293d45273261, `productid` 1137 |
+| EcoTracker | `serial` 293d45273262, `productid` 1137 |
 
 Zugangsdaten (WLAN) stehen bewusst nicht im Code. Wer das Projekt für ein anderes Netz nutzt, ändert diese Werte in `/config`
 oder im Quellcode.

@@ -97,7 +97,7 @@ void ecoTrackerSetupMdns()
 {
   String host = ecoTrackerHostname();
   String ip = WiFi.localIP().toString();
-  String serial = cfgString(config_doc["ecotracker"]["serial"], "293d45273261");
+  String serial = cfgString(config_doc["ecotracker"]["serial"], "293d45273262");
   String productid = cfgString(config_doc["ecotracker"]["productid"], "1137");
 
   if (!MDNS.begin(host.c_str()))
