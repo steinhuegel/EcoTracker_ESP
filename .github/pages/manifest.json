@@ -1,0 +1,42 @@
+{
+    "name": "Energy2Shelly",
+    "new_install_prompt_erase": true,
+    "builds": [
+      {
+        "chipFamily": "ESP8266",
+        "improv": false,
+        "parts": [
+          { "path": "esp8266.bin", "offset": 0 }
+        ]
+      },
+      {
+        "chipFamily": "ESP32",
+        "improv": false,
+        "parts": [
+          { "path": "esp32.bin", "offset": 0 }
+        ]
+      },
+      {
+        "chipFamily": "ESP32-C3",
+        "improv": false,
+        "parts": [
+          { "path": "esp32-c3.bin", "offset": 0 }
+        ]
+      },
+      {
+        "chipFamily": "ESP32-S3",
+        "improv": false,
+        "parts": [
+          { "path": "esp32-s3.bin", "offset": 0 }
+        ]
+      },
+      {
+        "chipFamily": "ESP32-S3-N8",
+        "improv": false,
+        "parts": [
+          { "path": "esp32-s3-N8.bin", "offset": 0 }
+        ]
+      }
+      
+    ]
+  }

@@ -1,0 +1,204 @@
+#include "DataStructures.h"
+#include "DataProcessing.h"
+#include "../config/Configuration.h"
+
+// Global data structures
+PowerData PhasePower[3];
+EnergyData PhaseEnergy[3];
+String serJsonResponse;
+
+double round2(double value) {
+  return round(value * 100.0) / 100.0;
+}
+
+bool isValidIPAddress(const char* ipString) {
+  IPAddress ip;
+  return ip.fromString(ipString);
+}
+
+JsonVariant resolveJsonPath(JsonVariant variant, const char *path) {
+  for (size_t n = 0; path[n]; n++) {
+    // Not a full array support, but works for Shelly 3EM emeters array!
+    if (path[n] == '[') {
+      variant = variant[JsonString(path, n)][atoi(&path[n+1])];
+      path += n + 4;
+      n = 0;
+    }
+    if (path[n] == '.') {
+      variant = variant[JsonString(path, n)];
+      path += n + 1;
+      n = 0;
+    }
+  }
+  return variant[path];
+}
+
+void setPowerData(double totalPower) {
+  double adjustedPower = totalPower + offsetPerPhase * 3;
+
+  switch(phase_number) {
+    case 1: // monophase
+      PhasePower[0].power = round2(adjustedPower);
+      PhasePower[1].power = 0.0;
+      PhasePower[2].power = 0.0;
+      break;
+    case 3: // triphase
+    default:
+      // split in thirds, the last phase takes the remainder so the phases add up
+      // exactly to the total (3 x 0.3333 would lose 0.01%)
+      PhasePower[0].power = round2(adjustedPower / 3.0);
+      PhasePower[1].power = round2(adjustedPower / 3.0);
+      PhasePower[2].power = round2(adjustedPower - PhasePower[0].power - PhasePower[1].power);
+      break;
+  }
+  for (int i = 0; i <= 2; i++) {
+    PhasePower[i].voltage = round2(defaultVoltage);
+    PhasePower[i].current = round2(PhasePower[i].power / PhasePower[i].voltage);
+    PhasePower[i].apparentPower = round2(PhasePower[i].power);
+    PhasePower[i].powerFactor = round2(defaultPowerFactor);
+    PhasePower[i].frequency = defaultFrequency;
+  }
+  DEBUG_SERIAL.print(F("Current total power (with offset): "));
+  DEBUG_SERIAL.println(adjustedPower);
+}
+
+void setPowerData(double phase1Power, double phase2Power, double phase3Power) {
+  switch(phase_number) {
+    case 1: // monophase
+      PhasePower[0].power = round2(phase1Power) + round2(phase2Power) + round2(phase3Power) + offsetPerPhase * 3;
+      PhasePower[1].power = 0.0;
+      PhasePower[2].power = 0.0;
+      break;
+    case 3: // triphase
+    default:
+      PhasePower[0].power = round2(phase1Power + offsetPerPhase);
+      PhasePower[1].power = round2(phase2Power + offsetPerPhase);
+      PhasePower[2].power = round2(phase3Power + offsetPerPhase);
+      break;
+  }
+  for (int i = 0; i <= 2; i++) {
+    PhasePower[i].voltage = round2(defaultVoltage);
+    PhasePower[i].current = round2(PhasePower[i].power / PhasePower[i].voltage);
+    PhasePower[i].apparentPower = round2(PhasePower[i].power);
+    PhasePower[i].powerFactor = round2(defaultPowerFactor);
+    PhasePower[i].frequency = defaultFrequency;
+  }
+  DEBUG_SERIAL.print(F("Current power (with offset) L1: "));
+  DEBUG_SERIAL.print(phase1Power + offsetPerPhase);
+  DEBUG_SERIAL.print(F(" - L2: "));
+  DEBUG_SERIAL.print(phase2Power + offsetPerPhase);
+  DEBUG_SERIAL.print(F(" - L3: "));
+  DEBUG_SERIAL.println(phase3Power + offsetPerPhase);
+}
+
+void setEnergyData(double totalEnergyGridSupply, double totalEnergyGridFeedIn) {
+  switch (phase_number) {
+  case 1: // monophase
+    for (int i = 0; i <= 2; i++) {
+      PhaseEnergy[i].consumption = (i == 0) ? round2(totalEnergyGridSupply) : 0.0;
+      PhaseEnergy[i].gridfeedin = (i == 0) ? round2(totalEnergyGridFeedIn) : 0.0;
+    }
+    break;
+  case 3: // triphase
+  default:
+    // thirds, last phase takes the remainder so the counters add up exactly
+    PhaseEnergy[0].consumption = round2(totalEnergyGridSupply / 3.0);
+    PhaseEnergy[1].consumption = round2(totalEnergyGridSupply / 3.0);
+    PhaseEnergy[2].consumption = round2(totalEnergyGridSupply - PhaseEnergy[0].consumption - PhaseEnergy[1].consumption);
+    PhaseEnergy[0].gridfeedin = round2(totalEnergyGridFeedIn / 3.0);
+    PhaseEnergy[1].gridfeedin = round2(totalEnergyGridFeedIn / 3.0);
+    PhaseEnergy[2].gridfeedin = round2(totalEnergyGridFeedIn - PhaseEnergy[0].gridfeedin - PhaseEnergy[1].gridfeedin);
+    break;
+  }
+  DEBUG_SERIAL.print(F("Total Consumption (Grid Supply): "));
+  DEBUG_SERIAL.print(totalEnergyGridSupply);
+  DEBUG_SERIAL.print(F(" - Total Production (Grid Feed-In): "));
+  DEBUG_SERIAL.println(totalEnergyGridFeedIn);
+}
+
+void setJsonPathPower(JsonDocument json) {
+  // If the incoming JSON already uses Shelly 3EM field names, parse directly
+  double offsetPerPhase = String(power_offset).toDouble() / 3.0;  // distribute offset equally across phases
+  
+  if (json["a_current"].is<JsonVariant>() || json["a_act_power"].is<JsonVariant>()) {
+    DEBUG_SERIAL.println(F("Parsing direct Shelly 3EM payload"));
+    PhasePower[0].current = round2((double)json["a_current"].as<double>());
+    PhasePower[0].voltage = round2((double)json["a_voltage"].as<double>());
+    PhasePower[0].power = round2((double)json["a_act_power"].as<double>() + offsetPerPhase);
+    PhasePower[0].apparentPower = round2((double)json["a_aprt_power"].as<double>() + offsetPerPhase);
+    PhasePower[0].powerFactor = round2((double)json["a_pf"].as<double>());
+    PhasePower[0].frequency = json["a_freq"].as<int>();
+
+    PhasePower[1].current = round2((double)json["b_current"].as<double>());
+    PhasePower[1].voltage = round2((double)json["b_voltage"].as<double>());
+    PhasePower[1].power = round2((double)json["b_act_power"].as<double>() + offsetPerPhase);
+    PhasePower[1].apparentPower = round2((double)json["b_aprt_power"].as<double>() + offsetPerPhase);
+    PhasePower[1].powerFactor = round2((double)json["b_pf"].as<double>());
+    PhasePower[1].frequency = json["b_freq"].as<int>();
+
+    PhasePower[2].current = round2((double)json["c_current"].as<double>());
+    PhasePower[2].voltage = round2((double)json["c_voltage"].as<double>());
+    PhasePower[2].power = round2((double)json["c_act_power"].as<double>() + offsetPerPhase);
+    PhasePower[2].apparentPower = round2((double)json["c_aprt_power"].as<double>() + offsetPerPhase);
+    PhasePower[2].powerFactor = round2((double)json["c_pf"].as<double>());
+    PhasePower[2].frequency = json["c_freq"].as<int>();
+
+    // Optionally use total fields if present
+    if (json["total_act_power"].is<JsonVariant>()) {
+      double total = json["total_act_power"].as<double>() + offsetPerPhase * 3;
+      // distribute if individual phases missing or for logging
+      DEBUG_SERIAL.print(F("Total power from payload: "));
+      DEBUG_SERIAL.println(total);
+    }
+    // Pick up energy counters if the Shelly-style payload includes them
+    // (e.g. SMLReader publishes energy_in/energy_out in Wh).
+    if (json["energy_in"].is<JsonVariant>() && json["energy_out"].is<JsonVariant>()) {
+      setEnergyData(json["energy_in"].as<double>(), json["energy_out"].as<double>());
+    }
+    return;
+  }
+  if (strcmp(power_path, "TRIPHASE") == 0) {
+    DEBUG_SERIAL.println(F("resolving triphase"));
+    double power1 = resolveJsonPath(json, power_l1_path);
+    double power2 = resolveJsonPath(json, power_l2_path);
+    double power3 = resolveJsonPath(json, power_l3_path);
+    DEBUG_SERIAL.println(power1);
+    setPowerData(power1, power2, power3);
+  } else {
+    // Check if BOTH paths (Import = power_path, Export = pwr_export_path) are defined
+    if ((strcmp(power_path, "") != 0) && (strcmp(pwr_export_path, "") != 0)) {
+      DEBUG_SERIAL.println(F("Resolving net power (import - export)"));
+      double importPower = resolveJsonPath(json, power_path).as<double>();
+      double exportPower = resolveJsonPath(json, pwr_export_path).as<double>();
+      double netPower = importPower - exportPower;
+      setPowerData(netPower);
+    }
+    // (FALLBACK): Only the normal power_path (import path) is defined (old logic)
+    else if (strcmp(power_path, "") != 0) {
+      DEBUG_SERIAL.println(F("Resolving monophase (single path only)"));
+      double power = resolveJsonPath(json, power_path).as<double>();
+      setPowerData(power);
+    }
+  }
+  if ((strcmp(energy_in_path, "") != 0) && (strcmp(energy_out_path, "") != 0)) {
+    double energyIn = resolveJsonPath(json, energy_in_path);
+    double energyOut = resolveJsonPath(json, energy_out_path);
+    setEnergyData(energyIn, energyOut);
+  }
+}
+
+// Helper: parse a raw Shelly JSON string and forward to setJsonPathPower
+void parseShellyString(const char *jsonStr) {
+  JsonDocument doc;
+  DeserializationError err = deserializeJson(doc, jsonStr);
+  if (err) {
+    DEBUG_SERIAL.print(F("deserializeJson failed: "));
+    DEBUG_SERIAL.println(err.c_str());
+    return;
+  }
+  setJsonPathPower(doc);
+}
+
+void parseShellyString(const String &s) {
+  parseShellyString(s.c_str());
+}
